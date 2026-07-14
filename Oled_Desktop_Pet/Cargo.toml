@@ -1,0 +1,12 @@
+[package]
+name = "Oled_Desktop_Pet"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+libc = "0.2"
+embedded-graphics = "0.8"
+toml = "0.8"
+
+[build-dependencies]
+image = { version = "0.24", default-features = false, features = ["png"] }

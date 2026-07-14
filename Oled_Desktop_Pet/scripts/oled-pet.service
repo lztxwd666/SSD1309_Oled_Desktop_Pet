@@ -1,0 +1,30 @@
+[Unit]
+Description=OLED Desktop Pet — system monitor on 128x64 I2C OLED
+Documentation=https://github.com/yourname/Oled_Desktop_Pet
+After=multi-user.target
+Wants=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/oled-pet
+WorkingDirectory=/etc/oled-pet
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=oled-pet
+
+# 安全加固
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/dev/i2c-1 /etc/oled-pet
+ReadOnlyPaths=/proc /sys
+DeviceAllow=/dev/i2c-1 rw
+
+# 环境变量
+Environment=RUST_BACKTRACE=0
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo build *)",
+      "Bash(cargo test *)",
+      "Bash(timeout 5 cargo run)",
+      "Bash(timeout 4 cargo run)",
+      "Bash(curl -sL -o /tmp/gostacean.svg \"https://upload.wikimedia.org/wikipedia/commons/4/4d/Justjanne_stickers_-_gostacean.svg\")",
+      "Read(//tmp/**)",
+      "Read(//home/pi/.cargo/registry/src/**)",
+      "Bash(cargo search *)",
+      "WebFetch(domain:docs.rs)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "Bash(cargo clippy *)",
+      "Bash(bash -c ' *)",
+      "Read(//home/pi/.claude/**)",
+      "Bash(cargo clean *)",
+      "Bash(OUT_DIR=/tmp/test_sprites cargo run --manifest-path /home/pi/I2C_Display_Driver/Oled_Desktop_Pet/Cargo.toml --example build)"
+    ]
+  }
+}

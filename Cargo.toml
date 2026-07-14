@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "Oled_Desktop_Pet"
+]
+# 后续新增子库直接追加：members = ["Oled_Desktop_Pet", "shared_utils"]
+# 统一锁定依赖版本，所有子项目共享 Cargo.lock，避免重复下载
+resolver = "2"

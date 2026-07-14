@@ -1,0 +1,52 @@
+# OLED Desktop Pet — 运行时配置 (TOML)
+# 标注 [热加载] 的项修改后自动生效，无需重启。
+# 标注 [需重启] 的项需重启程序生效。
+# 双路径搜索：configs/settings.toml 或 Oled_Desktop_Pet/configs/settings.toml
+
+[display]
+i2c_bus = 1                    # I2C 总线编号 [需重启]
+i2c_addr = "0x3C"              # SSD1309 OLED 地址 0x3C 或 0x3D [需重启]
+night_begin = 23               # 夜间模式起始小时 0-23 [热加载]
+night_end = 7                  # 夜间模式结束小时，支持跨日 [热加载]
+night_contrast = 20            # 夜间对比度 0-255（默认 207=正常）[热加载]
+blink_interval = 6             # 眨眼间隔（帧数），4Hz 下 6≈1.5s [需重启]
+
+[poll]
+interval_ms = 250              # 渲染间隔 ms，4Hz=250，1Hz=1000 [需重启]
+malloc_trim_secs = 5           # malloc_trim 间隔秒数 [热加载]
+
+[boot]
+frame_ms = 250                 # 开机动画帧时长 ms [需重启]
+done_ms = 400                  # 开机完成停留时长 ms [需重启]
+
+[shutdown]
+frame_ms = 200                 # 关机动画帧时长 ms [需重启]
+
+[notify]
+duration_secs = 3              # 通知显示时长 秒 [热加载]
+ssh_poll_secs = 5              # SSH 检测间隔 秒 [热加载]
+ssh_renotify_secs = 300        # 同一用户重新通知间隔 秒 [热加载]
+ip_poll_secs = 2               # IP 地址检测间隔 秒 [热加载]
+
+[alert]
+cpu_temp_high = 70.0           # CPU 温度告警阈值 °C [热加载]
+cpu_temp_safe = 65.0           # CPU 温度安全阈值 °C [热加载]
+mem_high = 90.0                # 内存告警阈值 % [热加载]
+mem_safe = 70.0                # 内存安全阈值 % [热加载]
+disk_high = 80.0               # 磁盘告警阈值 % [热加载]
+disk_safe = 70.0               # 磁盘安全阈值 % [热加载]
+temp_deadzone = 0.5            # 温度趋势死区 °C [热加载]
+throttle_ratio = 0.7           # 降频判定比率 (cur/max) [热加载]
+throttle_temp = 65.0           # 降频判定温度阈值 °C [热加载]
+
+[path]
+thermal = "/sys/class/thermal/thermal_zone0/temp"         # 温度传感器路径 [需重启]
+font_config = "configs/font.txt"                          # 自定义字体文件 [需重启]
+
+[net]
+iface_priority = ["eth0", "end0", "wlan0"]                # 接口优先级 [需重启]
+
+[sprite]
+max_size = 52                  # 精灵最大尺寸 px [需重新编译]
+png = "ferris.png"             # 精灵文件名 assets/images/ 下 [需重新编译]
+threshold = 80                 # 二值化亮度阈值 0-255 [需重新编译]
