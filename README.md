@@ -2,7 +2,7 @@
 
 Raspberry Pi CM5 的 128×64 单色 OLED（SSD1309）系统监控桌面宠物，通过 I2C 驱动。
 
-显示 Ferris 螃蟹精灵（带眨眼动画）+ 实时系统指标 + 事件通知。
+显示Rust螃蟹宠物（带眨眼动画）+ 实时系统指标 + 事件通知。
 
 <p align="center">
   <img src="example.png" alt="OLED Desktop Pet 运行截图" width="512">
