@@ -2,7 +2,11 @@
 
 Raspberry Pi CM5 的 128×64 单色 OLED（SSD1309）系统监控桌面宠物，通过 I2C 驱动。
 
-显示 Rust吉祥物（带眨眼动画）+ 实时系统指标 + 事件通知。
+显示 Ferris 螃蟹精灵（带眨眼动画）+ 实时系统指标 + 事件通知。
+
+<p align="center">
+  <img src="example.png" alt="OLED Desktop Pet 运行截图" width="512">
+</p>
 
 ## 功能
 
@@ -52,7 +56,8 @@ sudo i2cdetect -y 1      # 扫描 I2C 总线
 ## 架构
 
 ```
-main.rs (130 行) ── 装配层
+lib.rs (11 行) ── 模块声明
+main.rs (165 行) ── 装配层（初始化→开机动画→主循环→关机动画）
 ├── app/          boot / config / config_reload / render / shutdown / signal
 ├── monitor/      cpu / cpufreq / memory / network / percore / process / thermal
 ├── notify/       iface / ip / ssh / system / typec / usb

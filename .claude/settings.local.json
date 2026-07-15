@@ -16,7 +16,8 @@
       "Bash(bash -c ' *)",
       "Read(//home/pi/.claude/**)",
       "Bash(cargo clean *)",
-      "Bash(OUT_DIR=/tmp/test_sprites cargo run --manifest-path /home/pi/I2C_Display_Driver/Oled_Desktop_Pet/Cargo.toml --example build)"
+      "Bash(OUT_DIR=/tmp/test_sprites cargo run --manifest-path /home/pi/I2C_Display_Driver/Oled_Desktop_Pet/Cargo.toml --example build)",
+      "Bash(cargo check *)"
     ]
   }
 }

@@ -8,5 +8,9 @@ libc = "0.2"
 embedded-graphics = "0.8"
 toml = "0.8"
 
+[lib]
+name = "oled_desktop_pet"
+path = "src/lib.rs"
+
 [build-dependencies]
 image = { version = "0.24", default-features = false, features = ["png"] }

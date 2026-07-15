@@ -1,28 +1,16 @@
-//! OLED 桌宠 —— 系统监控 + OLED 显示。
-//!
-//! 主循环：4 Hz 渲染 + 1 Hz 监控，self-pipe 信号响应。
-
-mod app;
-mod assets;
-mod config;
-mod display;
-mod model;
-mod monitor;
-mod notify;
-mod renderer;
-mod resource;
-mod ui;
-mod utils;
+//! OLED 桌宠入口点。
 
 use std::io::{self, Write};
 use std::sync::atomic::Ordering;
 
-use app::signal;
-use notify::{
-    EventSource, Notifier, iface::IfaceMonitor, ip::IpMonitor, ssh::SshMonitor,
+use oled_desktop_pet::app::{config, config_reload, render, shutdown, signal};
+use oled_desktop_pet::display;
+use oled_desktop_pet::notify::{
+    self, EventSource, Notifier,
+    iface::IfaceMonitor, ip::IpMonitor, ssh::SshMonitor,
     system::SystemAlerts, typec::TypeCMonitor, usb::UsbMonitor,
 };
-use utils::AppError;
+use oled_desktop_pet::utils::AppError;
 
 fn main() {
     if let Err(e) = run() {
@@ -37,13 +25,13 @@ fn run() -> Result<(), AppError> {
     signal::PIPE_WRITE_FD.store(pipe_write, Ordering::SeqCst);
     signal::install_signal_handlers();
 
-    let mut rt = app::config::load();
+    let mut rt = config::load();
     let started = signal::boottime_now();
 
     let mut display = display::Display::open(rt.i2c_bus, rt.i2c_addr)?;
 
     // 开机动画（信号中断则提前关机）
-    let mut monitor = match app::boot::run_boot_sequence(
+    let mut monitor = match oled_desktop_pet::app::boot::run_boot_sequence(
         &mut display,
         pipe_read,
         rt.boot_frame_ms,
@@ -54,11 +42,9 @@ fn run() -> Result<(), AppError> {
     ) {
         Ok(m) => m,
         Err(_) => {
-            return app::shutdown::shutdown(
-                &mut display,
-                false,
-                rt.shutdown_frame_ms,
-                rt.done_frame_ms as u64,
+            return shutdown::shutdown(
+                &mut display, false,
+                rt.shutdown_frame_ms, rt.done_frame_ms as u64,
                 pipe_read,
             );
         }
@@ -89,7 +75,7 @@ fn run() -> Result<(), AppError> {
     let mut last_temp = info.cpu_temp_celsius;
     let mut night = false;
     let mut night_check: u64 = 0;
-    let mut cfg_mtime: i64 = 0;
+    let mut cfg_mtime: i64 = config_reload::config_mtime();
 
     loop {
         // 1 Hz 监控帧
@@ -114,16 +100,16 @@ fn run() -> Result<(), AppError> {
                 info.cpu_temp_celsius,
                 info.cpu_usage_pct,
                 info.mem_usage_pct,
-                app::render::fmt_rate_term(info.net_tx_rate_kibs),
-                app::render::fmt_rate_term(info.net_rx_rate_kibs)
+                render::fmt_rate_term(info.net_tx_rate_kibs),
+                render::fmt_rate_term(info.net_rx_rate_kibs)
             );
             let _ = io::stdout().flush();
 
-            // 夜间模式 —— 每 60 秒重新评估（避免每秒 clock_gettime + localtime_r）
+            // 夜间模式 —— 每 60 秒重新评估
             night_check += 1;
             if night_check >= 60 {
                 night_check = 0;
-                let now_night = app::config_reload::is_night(rt.night_begin, rt.night_end);
+                let now_night = config_reload::is_night(rt.night_begin, rt.night_end);
                 if now_night != night {
                     night = now_night;
                     display.set_contrast(if night { rt.night_contrast } else { 0xCF })?;
@@ -131,19 +117,15 @@ fn run() -> Result<(), AppError> {
             }
 
             // 配置热加载
-            app::config_reload::reload_if_changed(&mut rt, &mut cfg_mtime);
+            config_reload::reload_if_changed(&mut rt, &mut cfg_mtime);
         }
 
         // 渲染
         let uptime = signal::boottime_now().saturating_sub(started);
         display.framebuffer.clear();
-        app::render::render_screen(
+        render::render_screen(
             &mut display.framebuffer,
-            &info,
-            uptime,
-            &mut notifier,
-            cycle,
-            rt.blink_interval,
+            &info, uptime, &mut notifier, cycle, rt.blink_interval,
         );
         display.render()?;
 
@@ -153,28 +135,19 @@ fn run() -> Result<(), AppError> {
 
         cycle += 1;
         if cycle.is_multiple_of(rt.malloc_trim_secs * 4) {
-            // SAFETY: malloc_trim 是 glibc 扩展，参数 0 表示释放所有可释放内存，
-            // 无副作用，返回值忽略。在非 glibc 平台上不可用，本项目目标为 Debian/glibc。
+            // SAFETY: malloc_trim 是 glibc 扩展，参数 0 释放所有可释放内存。
             let _ = unsafe { libc::malloc_trim(0) };
         }
     }
 
-    app::shutdown::shutdown(
-        &mut display,
-        true,
-        rt.shutdown_frame_ms,
-        rt.done_frame_ms as u64,
+    shutdown::shutdown(
+        &mut display, true,
+        rt.shutdown_frame_ms, rt.done_frame_ms as u64,
         pipe_read,
     )
 }
 
 fn trend(curr: f32, prev: f32, deadzone: f32) -> i8 {
     let d = curr - prev;
-    if d > deadzone {
-        1
-    } else if d < -deadzone {
-        -1
-    } else {
-        0
-    }
+    if d > deadzone { 1 } else if d < -deadzone { -1 } else { 0 }
 }
