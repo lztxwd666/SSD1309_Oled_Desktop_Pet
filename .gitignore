@@ -1,4 +1,5 @@
 target/
+.zed_server/
 
 .idea/
 .vscode/

@@ -32,16 +32,16 @@ impl super::EventSource for UsbMonitor {
             None => return,
         };
 
-        // 重试之前未读到产品名的设备
-        let mut resolved: Vec<String> = Vec::new();
-        for name in &self.pending_names {
+        // 重试之前未读到产品名的设备（retain 直接过滤，无需中间 Vec）
+        self.pending_names.retain(|name| {
             if let Some(desc) = usb_product_name(name) {
                 self.product_cache.insert(name.clone(), desc.clone());
                 notifier.push(Notification::new(NotifyKind::UsbInsert, format!("USB {desc}")));
-                resolved.push(name.clone());
+                false // 已解析，移出 pending
+            } else {
+                true // 仍然不可用，继续等待
             }
-        }
-        for name in &resolved { self.pending_names.remove(name); }
+        });
 
         // 新插入设备
         for name in current.difference(&self.prev_devices) {

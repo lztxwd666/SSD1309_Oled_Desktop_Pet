@@ -123,7 +123,7 @@ impl NetworkMonitor {
 /// 3. 兜底：任一存在的接口
 fn select_best_iface(priority: &[String]) -> Result<String, AppError> {
     if let Some(iface) = default_route_iface()
-        && is_up(&iface)
+        && crate::utils::is_iface_up(&iface)
     {
         return Ok(iface);
     }
@@ -168,7 +168,7 @@ fn most_active_up_iface() -> Option<String> {
         let trimmed = line.trim_start();
         if let Some(colon_pos) = trimmed.find(':') {
             let name = trimmed[..colon_pos].trim().to_string();
-            if name == "lo" || !is_up(&name) {
+            if name == "lo" || !crate::utils::is_iface_up(&name) {
                 continue;
             }
             // 使用迭代器替代 Vec::collect()，避免堆分配
@@ -185,14 +185,6 @@ fn most_active_up_iface() -> Option<String> {
     }
     best_name
 }
-
-/// 检查接口是否启用。
-fn is_up(name: &str) -> bool {
-    fs::read_to_string(format!("/sys/class/net/{}/operstate", name))
-        .map(|s| s.trim() == "up")
-        .unwrap_or(false)
-}
-
 // ── 原始数据读取 ──────────────────────────────────────────
 
 /// 从 /proc/net/dev 解析接口的 (rx_bytes, tx_bytes)。

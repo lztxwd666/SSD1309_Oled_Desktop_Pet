@@ -22,14 +22,6 @@ pub use thermal::ThermalMonitor;
 use crate::model::SystemInfo;
 use crate::utils::AppError;
 
-/// 系统指标采集器的公共接口（预留，当前通过固有方法调用）。
-#[allow(dead_code)]
-pub trait Monitor {
-    type Output;
-    fn poll(&mut self) -> Result<Self::Output, AppError>;
-    fn name(&self) -> &'static str;
-}
-
 /// 持有所有子系统监控器，协调全系统轮询。
 pub struct SystemMonitor {
     thermal: ThermalMonitor,
@@ -72,8 +64,12 @@ impl SystemMonitor {
     pub fn poll_all(&mut self) -> SystemInfo {
         let mut info = SystemInfo::default();
 
-        if let Ok(t) = self.thermal.poll() { info.cpu_temp_celsius = t; }
-        if let Ok(pct) = self.cpu.poll() { info.cpu_usage_pct = pct; }
+        if let Ok(t) = self.thermal.poll() {
+            info.cpu_temp_celsius = t;
+        }
+        if let Ok(pct) = self.cpu.poll() {
+            info.cpu_usage_pct = pct;
+        }
         info.mem_total_kb = self.memory.total_kb();
         if let Ok(used) = self.memory.used_kb() {
             info.mem_used_kb = used;
@@ -91,7 +87,9 @@ impl SystemMonitor {
             info.self_vm_kb = snap.vm_kb;
             info.self_threads = snap.threads;
         }
-        if let Ok(cores) = self.percore.poll() { info.per_core_pct = cores; }
+        if let Ok(cores) = self.percore.poll() {
+            info.per_core_pct = cores;
+        }
         let (freq, _max) = self.cpufreq.poll();
         info.cpu_freq_ghz = freq;
         // 存储原始数据供外部配置化降频判定使用
@@ -101,37 +99,4 @@ impl SystemMonitor {
         info.timestamp = std::time::Instant::now();
         info
     }
-}
-
-impl Monitor for ThermalMonitor {
-    type Output = f32;
-    fn poll(&mut self) -> Result<f32, AppError> { ThermalMonitor::poll(self) }
-    fn name(&self) -> &'static str { "thermal" }
-}
-
-impl Monitor for CpuMonitor {
-    type Output = f32;
-    fn poll(&mut self) -> Result<f32, AppError> { CpuMonitor::poll(self) }
-    fn name(&self) -> &'static str { "cpu" }
-}
-
-impl Monitor for MemoryMonitor {
-    type Output = f32;
-    fn poll(&mut self) -> Result<f32, AppError> { MemoryMonitor::percent(self) }
-    fn name(&self) -> &'static str { "memory" }
-}
-
-impl Monitor for NetworkMonitor {
-    type Output = (f32, f32);
-    fn poll(&mut self) -> Result<(f32, f32), AppError> {
-        NetworkMonitor::poll(self)?;
-        Ok((NetworkMonitor::rx_rate_kbps(self), NetworkMonitor::tx_rate_kbps(self)))
-    }
-    fn name(&self) -> &'static str { "network" }
-}
-
-impl Monitor for ProcessMonitor {
-    type Output = process::ProcessSnapshot;
-    fn poll(&mut self) -> Result<process::ProcessSnapshot, AppError> { ProcessMonitor::poll(self) }
-    fn name(&self) -> &'static str { "process" }
 }

@@ -7,13 +7,18 @@ use crate::model::SystemInfo;
 use std::time::Duration;
 
 /// 标签-值对齐：`label` 左，`value` 右，空格填充至 14 字符。
+/// 使用单次预分配写入，避免 `format!()` + `" ".repeat()` 双重堆分配。
 fn align(label: &str, value: &str) -> String {
     let total = label.chars().count() + value.chars().count();
-    if total >= 14 {
-        format!("{}{}", label, value)
-    } else {
-        format!("{}{}{}", label, " ".repeat(14 - total), value)
+    let mut s = String::with_capacity(14);
+    s.push_str(label);
+    if total < 14 {
+        for _ in 0..(14 - total) {
+            s.push(' ');
+        }
     }
+    s.push_str(value);
+    s
 }
 
 /// 自身行：RSS 左 + CPU% 右。
@@ -31,7 +36,11 @@ pub fn fmt_self(info: &SystemInfo) -> String {
 /// CPU 温度 + 频率行：`"CPU    ↑48°C 2.4G"`（箭头紧贴温度值，仿流量箭头，14 字符精确）。
 pub fn fmt_cpu_temp_freq(celsius: f32, freq_ghz: f32, trend: i8, throttling: bool) -> String {
     // 箭头紧贴温度值（仿流量 ↑↓ 紧贴速率值），稳定时无箭头
-    let arrow = match trend { 1 => "↑", -1 => "↓", _ => "" };
+    let arrow = match trend {
+        1 => "↑",
+        -1 => "↓",
+        _ => "",
+    };
     let warn = if throttling { "!" } else { "" };
     let v = if freq_ghz > 0.0 {
         let f_str = if throttling {
@@ -82,9 +91,17 @@ pub fn fmt_net_th(tx_kibs: f32, rx_kibs: f32, threads: u32) -> String {
 pub fn fmt_disk() -> String {
     let (used, total, _) = crate::utils::disk_info();
     let (u, t, unit) = if total >= 1_000_000_000_000 {
-        (used as f64 / 1_099_511_627_776.0, total as f64 / 1_099_511_627_776.0, "T")
+        (
+            used as f64 / 1_099_511_627_776.0,
+            total as f64 / 1_099_511_627_776.0,
+            "T",
+        )
     } else {
-        (used as f64 / 1_073_741_824.0, total as f64 / 1_073_741_824.0, "G")
+        (
+            used as f64 / 1_073_741_824.0,
+            total as f64 / 1_073_741_824.0,
+            "G",
+        )
     };
     align("Disk", &format!("{:.1}/{:.0}{unit}", u, t))
 }

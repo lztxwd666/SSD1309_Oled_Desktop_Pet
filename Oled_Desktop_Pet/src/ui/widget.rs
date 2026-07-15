@@ -4,10 +4,6 @@ use super::layout::{self, Rect};
 use crate::display::Framebuffer;
 use crate::renderer::{canvas, text};
 
-pub fn metric_row(fb: &mut Framebuffer, x: usize, y: usize, text: &str) {
-    text::draw_text_packed(fb, x, y, text);
-}
-
 pub fn status_bar(fb: &mut Framebuffer, area: &Rect, left: &str, right: &str) {
     canvas::fill_rect(fb, area.x, area.y, area.w, area.h);
     text::draw_text_inverted(fb, area.x + 1, area.y, left);

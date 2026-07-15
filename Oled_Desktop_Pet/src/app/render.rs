@@ -78,7 +78,10 @@ fn render_pet(fb: &mut Framebuffer, cycle: u64, blink_interval: u64) {
         let eh = assets::EYE_BOX_H + m + 2;
         let slit_y = (assets::EYE_L_Y + eh).saturating_sub(eh / 3 + 1).min(63);
 
-        for (ex, ey) in [(assets::EYE_L_X, assets::EYE_L_Y), (assets::EYE_R_X, assets::EYE_R_Y)] {
+        for (ex, ey) in [
+            (assets::EYE_L_X, assets::EYE_L_Y),
+            (assets::EYE_R_X, assets::EYE_R_Y),
+        ] {
             let x0 = ex.saturating_sub(m);
             let y0 = ey.saturating_sub(m);
             let bot = (ey + eh).min(64);
@@ -105,7 +108,9 @@ fn render_percore_bars(fb: &mut Framebuffer, info: &SystemInfo) {
 
     for i in 0..4 {
         let y = bar_y + i;
-        if y >= LAYOUT.pet.bottom() { break; }
+        if y >= LAYOUT.pet.bottom() {
+            break;
+        }
         let fill = (bar_w as f32 * info.per_core_pct[i].clamp(0.0, 100.0) / 100.0) as usize;
         if fill > 0 {
             canvas::fill_rect(fb, bar_x, y, fill, 1);
@@ -125,12 +130,21 @@ fn render_metrics(fb: &mut Framebuffer, info: &SystemInfo) {
     let mut y = LAYOUT.metrics.y;
 
     // 自身进程
-    widget::metric_row(fb, x, y, &fmt::fmt_self(info));
+    text::draw_text_packed(fb, x, y, &fmt::fmt_self(info));
     y += layout::ROW_H + gap;
 
     // CPU 温度 + 频率 + 趋势箭头 + 降频警告
-    widget::metric_row(fb, x, y, &fmt::fmt_cpu_temp_freq(
-        info.cpu_temp_celsius, info.cpu_freq_ghz, info.temp_trend, info.cpu_throttling));
+    text::draw_text_packed(
+        fb,
+        x,
+        y,
+        &fmt::fmt_cpu_temp_freq(
+            info.cpu_temp_celsius,
+            info.cpu_freq_ghz,
+            info.temp_trend,
+            info.cpu_throttling,
+        ),
+    );
     y += layout::ROW_H;
 
     // CPU 利用率进度条
@@ -142,15 +156,21 @@ fn render_metrics(fb: &mut Framebuffer, info: &SystemInfo) {
     y += layout::ROW_H + gap;
 
     // 内存 + 磁盘（存储组）
-    widget::metric_row(fb, x, y, &fmt::fmt_ram(info.mem_used_kb, info.mem_total_kb));
+    text::draw_text_packed(fb, x, y, &fmt::fmt_ram(info.mem_used_kb, info.mem_total_kb));
     y += layout::ROW_H;
-    widget::metric_row(fb, x, y, &fmt::fmt_disk());
+    text::draw_text_packed(fb, x, y, &fmt::fmt_disk());
     y += layout::ROW_H + gap;
 
     // 网络 + 线程（底部）
-    widget::metric_row(
-        fb, x, y,
-        &fmt::fmt_net_th(info.net_tx_rate_kibs, info.net_rx_rate_kibs, info.self_threads),
+    text::draw_text_packed(
+        fb,
+        x,
+        y,
+        &fmt::fmt_net_th(
+            info.net_tx_rate_kibs,
+            info.net_rx_rate_kibs,
+            info.self_threads,
+        ),
     );
 
     // 宠物区底部每核条

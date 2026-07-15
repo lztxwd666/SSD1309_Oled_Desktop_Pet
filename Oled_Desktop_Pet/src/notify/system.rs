@@ -20,9 +20,12 @@ pub struct AlertConfig {
 impl Default for AlertConfig {
     fn default() -> Self {
         Self {
-            temp_high: 80.0, temp_safe: 75.0,
-            mem_high: 90.0, mem_safe: 85.0,
-            disk_high: 90.0, disk_safe: 85.0,
+            temp_high: 80.0,
+            temp_safe: 75.0,
+            mem_high: 90.0,
+            mem_safe: 85.0,
+            disk_high: 90.0,
+            disk_safe: 85.0,
         }
     }
 }
@@ -36,7 +39,12 @@ pub struct SystemAlerts {
 
 impl SystemAlerts {
     pub fn new(config: AlertConfig) -> Self {
-        Self { temp_fired: false, mem_fired: false, disk_fired: false, config }
+        Self {
+            temp_fired: false,
+            mem_fired: false,
+            disk_fired: false,
+            config,
+        }
     }
 
     pub fn check(&mut self, info: &SystemInfo, notifier: &mut Notifier) {
@@ -62,15 +70,14 @@ impl SystemAlerts {
 
         let disk_pct = crate::utils::disk_usage_pct();
         if !self.disk_fired {
-            if let Some(pct) = disk_pct
-                && pct >= self.config.disk_high {
-                    notifier.push(Notification::new(
-                        NotifyKind::DiskAlert,
-                        format!("Disk {:.0}%", pct),
-                    ));
-                    self.disk_fired = true;
-                }
-        } else if disk_pct.is_none_or(|p| p <= self.config.disk_safe) {
+            if disk_pct >= self.config.disk_high {
+                notifier.push(Notification::new(
+                    NotifyKind::DiskAlert,
+                    format!("Disk {:.0}%", disk_pct),
+                ));
+                self.disk_fired = true;
+            }
+        } else if disk_pct <= self.config.disk_safe {
             self.disk_fired = false;
         }
     }

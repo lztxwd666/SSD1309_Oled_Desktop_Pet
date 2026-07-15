@@ -28,11 +28,7 @@ pub fn shutdown(
         display.framebuffer.clear();
         display.render()?;
         display.sleep()?;
-        let fd = signal::PIPE_WRITE_FD.load(Ordering::Relaxed);
-        if fd >= 0 {
-            // SAFETY: close() 对合法 fd 是幂等的，进程退出前最后清理。
-            unsafe { libc::close(fd); }
-        }
+        close_pipe_write_fd();
         Ok(())
     }
 
@@ -55,6 +51,13 @@ pub fn shutdown(
     display.render()?;
     display.sleep()?;
 
+    close_pipe_write_fd();
+
+    Ok(())
+}
+
+/// 关闭 self-pipe 写端 fd，进程退出前最后清理。
+fn close_pipe_write_fd() {
     let fd = signal::PIPE_WRITE_FD.load(Ordering::Relaxed);
     if fd >= 0 {
         // SAFETY: close() 对合法 fd 是幂等的，进程退出前最后清理。
@@ -62,6 +65,4 @@ pub fn shutdown(
             libc::close(fd);
         }
     }
-
-    Ok(())
 }

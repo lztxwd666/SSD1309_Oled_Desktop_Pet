@@ -88,6 +88,7 @@ fn run() -> Result<(), AppError> {
     let mut info = monitor.poll_all();
     let mut last_temp = info.cpu_temp_celsius;
     let mut night = false;
+    let mut night_check: u64 = 0;
     let mut cfg_mtime: i64 = 0;
 
     loop {
@@ -118,11 +119,15 @@ fn run() -> Result<(), AppError> {
             );
             let _ = io::stdout().flush();
 
-            // 夜间模式
-            let now_night = app::config_reload::is_night(rt.night_begin, rt.night_end);
-            if now_night != night {
-                night = now_night;
-                display.set_contrast(if night { rt.night_contrast } else { 0xCF })?;
+            // 夜间模式 —— 每 60 秒重新评估（避免每秒 clock_gettime + localtime_r）
+            night_check += 1;
+            if night_check >= 60 {
+                night_check = 0;
+                let now_night = app::config_reload::is_night(rt.night_begin, rt.night_end);
+                if now_night != night {
+                    night = now_night;
+                    display.set_contrast(if night { rt.night_contrast } else { 0xCF })?;
+                }
             }
 
             // 配置热加载
@@ -148,6 +153,8 @@ fn run() -> Result<(), AppError> {
 
         cycle += 1;
         if cycle.is_multiple_of(rt.malloc_trim_secs * 4) {
+            // SAFETY: malloc_trim 是 glibc 扩展，参数 0 表示释放所有可释放内存，
+            // 无副作用，返回值忽略。在非 glibc 平台上不可用，本项目目标为 Debian/glibc。
             let _ = unsafe { libc::malloc_trim(0) };
         }
     }

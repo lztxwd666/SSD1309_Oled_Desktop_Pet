@@ -42,11 +42,15 @@ impl MemoryMonitor {
 
     /// 内存使用百分比（0.0 – 100.0）。接受已计算的 used_kb 避免重复读取 /proc。
     pub fn percent_from(&self, used_kb: u64) -> f32 {
-        if self.total_kb == 0 { 0.0 }
-        else { used_kb as f32 / self.total_kb as f32 * 100.0 }
+        if self.total_kb == 0 {
+            0.0
+        } else {
+            used_kb as f32 / self.total_kb as f32 * 100.0
+        }
     }
 
     /// 内存使用百分比（0.0 – 100.0）。单独调用时需读取 /proc。
+    #[allow(dead_code)]
     pub fn percent(&self) -> Result<f32, AppError> {
         Ok(self.percent_from(self.used_kb()?))
     }

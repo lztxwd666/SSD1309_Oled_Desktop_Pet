@@ -43,8 +43,8 @@ impl ProcessMonitor {
             prev_utime: stat.utime,
             prev_stime: stat.stime,
             prev_time: Instant::now(),
-            ticks_per_sec: clock_ticks_per_sec(),
-            page_size: system_page_size(),
+            ticks_per_sec: clock_ticks_per_sec()?,
+            page_size: system_page_size()?,
         })
     }
 
@@ -109,9 +109,9 @@ fn read_proc_stat() -> Result<ProcStat, AppError> {
     let stat = utils::read_trimmed("/proc/self/stat")?;
 
     // 找到 comm 字段的右括号
-    let rparen = stat.rfind(')').ok_or_else(|| {
-        AppError::Parse("进程 stat: 找不到 comm 右括号".into())
-    })?;
+    let rparen = stat
+        .rfind(')')
+        .ok_or_else(|| AppError::Parse("进程 stat: 找不到 comm 右括号".into()))?;
 
     // 右括号之后是空格 + state + 空格 + 后续字段
     let after = &stat[rparen + 2..];
@@ -148,15 +148,23 @@ fn read_proc_stat() -> Result<ProcStat, AppError> {
 }
 
 /// 获取系统时钟 tick 频率（通常为 100 Hz）。
-fn clock_ticks_per_sec() -> f64 {
-    // SAFETY: sysconf(_SC_CLK_TCK) 始终返回有效正值，无副作用。
-    unsafe { libc::sysconf(libc::_SC_CLK_TCK) as f64 }
+fn clock_ticks_per_sec() -> Result<f64, AppError> {
+    // SAFETY: sysconf(_SC_CLK_TCK) 查询系统时钟频率，无副作用。
+    let val = unsafe { libc::sysconf(libc::_SC_CLK_TCK) };
+    if val < 0 {
+        return Err(AppError::System("sysconf(_SC_CLK_TCK) 返回错误".into()));
+    }
+    Ok(val as f64)
 }
 
 /// 获取系统内存页大小（通常为 4096 字节）。
-fn system_page_size() -> u64 {
-    // SAFETY: sysconf(_SC_PAGESIZE) 始终返回有效正值，无副作用。
-    unsafe { libc::sysconf(libc::_SC_PAGESIZE) as u64 }
+fn system_page_size() -> Result<u64, AppError> {
+    // SAFETY: sysconf(_SC_PAGESIZE) 查询系统页大小，无副作用。
+    let val = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
+    if val < 0 {
+        return Err(AppError::System("sysconf(_SC_PAGESIZE) 返回错误".into()));
+    }
+    Ok(val as u64)
 }
 
 #[cfg(test)]

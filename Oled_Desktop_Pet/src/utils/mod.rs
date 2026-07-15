@@ -43,10 +43,10 @@ pub(crate) fn disk_info() -> (u64, u64, u32) {
     (used, total, pct)
 }
 
-/// 读取根分区磁盘使用率百分比。返回 None 表示 statvfs 调用失败。
-pub(crate) fn disk_usage_pct() -> Option<f32> {
+/// 读取根分区磁盘使用率百分比。statvfs 失败时返回 0.0。
+pub(crate) fn disk_usage_pct() -> f32 {
     let (_, _, pct) = disk_info();
-    Some(pct as f32)
+    pct as f32
 }
 
 /// 解析字符串为 f32。
@@ -54,6 +54,13 @@ pub(crate) fn disk_usage_pct() -> Option<f32> {
 #[inline]
 pub(crate) fn parse_f32(s: &str) -> Option<f32> {
     s.trim().parse().ok()
+}
+
+/// 检查网络接口是否已启用（读取 operstate）。
+pub(crate) fn is_iface_up(name: &str) -> bool {
+    fs::read_to_string(format!("/sys/class/net/{name}/operstate"))
+        .map(|s| s.trim() == "up")
+        .unwrap_or(false)
 }
 
 #[cfg(test)]

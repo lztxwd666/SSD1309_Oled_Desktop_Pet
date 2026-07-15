@@ -16,6 +16,8 @@ pub enum AppError {
     NotFound(String),
     /// 配置错误：配置文件格式或值无效。
     Config(String),
+    /// 系统级错误：sysconf 等系统调用返回错误。
+    System(String),
 }
 
 impl fmt::Display for AppError {
@@ -25,6 +27,7 @@ impl fmt::Display for AppError {
             Self::Parse(s) => write!(f, "解析错误: {s}"),
             Self::NotFound(s) => write!(f, "未找到: {s}"),
             Self::Config(s) => write!(f, "配置错误: {s}"),
+            Self::System(s) => write!(f, "系统错误: {s}"),
         }
     }
 }
